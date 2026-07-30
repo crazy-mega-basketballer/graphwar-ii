@@ -19,6 +19,9 @@ class GameViewModel : ViewModel() {
     private val _gameState = MutableStateFlow(LevelManager.loadLevel(1))
     val gameState = _gameState.asStateFlow()
 
+    private val _cameraOffset = MutableStateFlow(Offset.Zero)
+    val cameraOffset = _cameraOffset.asStateFlow()
+
     fun onFire(expression: String, direction: Int = 1) {
         SoundManager.play(SoundManager.SoundEffect.SHOOT)
 
@@ -27,21 +30,38 @@ class GameViewModel : ViewModel() {
         var hitTarget = false
         var destroyedObstacles = mutableListOf<Int>()
 
-        // Calculate trajectory (relative to player) in both directions
-        val range = if (direction > 0) (0..2000 step 5) else (0 downTo -2000 step 5)
+        // Calculate Y offset at x=0 to ensure trajectory starts from player
+        val yOffsetAtZero = MathParser.eval(expression, 0.0) ?: 0.0
+
+        // Calculate trajectory in both directions
+        val range = if (direction > 0) {
+            (0..100).map { it * 0.5 } // 0, 0.5, 1.0, 1.5, ... 50
+        } else {
+            (0..100).map { it * -0.5 } // 0, -0.5, -1.0, -1.5, ... -50
+        }
 
         for (x in range) {
-            val y = MathParser.eval(expression, x.toDouble())
-            if (y != null) {
-                // World coordinates: x goes right, y goes up (inverted from screen coords)
+            val rawY = MathParser.eval(expression, x)
+            if (rawY != null) {
+                // Apply Y correction so trajectory starts at player position
+                val correctedY = rawY - yOffsetAtZero
+
+                // World coordinates (relative to player)
                 val worldPoint = Offset(
                     current.playerPos.x + x.toFloat(),
-                    current.playerPos.y - y.toFloat()
+                    current.playerPos.y - correctedY.toFloat()
                 )
                 points.add(worldPoint)
 
-                // Collision with Target
-                if ((worldPoint - current.targetPos).getDistance() < 25f) {
+                // Check bounds
+                val bounds = current.fieldBounds
+                if (worldPoint.x < bounds.minX || worldPoint.x > bounds.maxX ||
+                    worldPoint.y < bounds.minY || worldPoint.y > bounds.maxY) {
+                    break
+                }
+
+                // Collision with Target (radius ~1 unit)
+                if ((worldPoint - current.targetPos).getDistance() < 1.5f) {
                     hitTarget = true
                     viewModelScope.launch {
                         animateProjectile(points)
@@ -69,9 +89,6 @@ class GameViewModel : ViewModel() {
                     }
                     break
                 }
-
-                // Out of bounds
-                if (worldPoint.x > 3000 || worldPoint.x < -1000 || worldPoint.y > 3000 || worldPoint.y < -1000) break
             } else break
         }
 
@@ -89,11 +106,12 @@ class GameViewModel : ViewModel() {
 
     private suspend fun animateProjectile(points: List<Offset>) {
         val current = _gameState.value
-        for (i in 1..points.size step 2) {
+        val step = maxOf(1, points.size / 50) // Show ~50 frames max
+        for (i in step..points.size step step) {
             _gameState.value = current.copy(
                 projectiles = listOf(Projectile(points.take(i), i.toFloat() / points.size))
             )
-            delay(3) // Smooth, fast animation
+            delay(10)
         }
         delay(300)
         _gameState.value = current.copy(projectiles = emptyList())
@@ -101,12 +119,14 @@ class GameViewModel : ViewModel() {
 
     fun loadLevel(level: Int) {
         _gameState.value = LevelManager.loadLevel(level)
+        centerOnPlayer()
     }
 
     private fun nextLevel() {
         val currentLevel = _gameState.value.currentLevel
         if (currentLevel < 30) {
             _gameState.value = LevelManager.loadLevel(currentLevel + 1)
+            centerOnPlayer()
         } else {
             // Game Won!
         }
@@ -115,15 +135,38 @@ class GameViewModel : ViewModel() {
     fun onMove(expression: String, deltaX: Float) {
         val current = _gameState.value
         if (current.moveCharges > 0) {
-            val y = MathParser.eval(expression, deltaX.toDouble())
-            if (y != null) {
+            // Calculate Y offset at x=0
+            val yOffsetAtZero = MathParser.eval(expression, 0.0) ?: 0.0
+
+            // Calculate Y at deltaX with correction
+            val rawY = MathParser.eval(expression, deltaX.toDouble())
+            if (rawY != null) {
+                val correctedY = rawY - yOffsetAtZero
+
                 SoundManager.play(SoundManager.SoundEffect.MOVE)
-                val newPos = Offset(current.playerPos.x + deltaX, current.playerPos.y - y.toFloat())
-                _gameState.value = current.copy(
-                    playerPos = newPos,
-                    moveCharges = current.moveCharges - 1
+                val newPos = Offset(
+                    current.playerPos.x + deltaX,
+                    current.playerPos.y - correctedY.toFloat()
                 )
+
+                // Check if new position is within bounds
+                val bounds = current.fieldBounds
+                if (newPos.x >= bounds.minX && newPos.x <= bounds.maxX &&
+                    newPos.y >= bounds.minY && newPos.y <= bounds.maxY) {
+                    _gameState.value = current.copy(
+                        playerPos = newPos,
+                        moveCharges = current.moveCharges - 1
+                    )
+                }
             }
         }
+    }
+
+    fun updateCameraOffset(offset: Offset) {
+        _cameraOffset.value = offset
+    }
+
+    fun centerOnPlayer() {
+        _cameraOffset.value = Offset.Zero
     }
 }

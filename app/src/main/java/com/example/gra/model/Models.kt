@@ -9,7 +9,8 @@ data class GameState(
     val moveCharges: Int = 3,
     val currentLevel: Int = 1,
     val isGameOver: Boolean = false,
-    val projectiles: List<Projectile> = emptyList()
+    val projectiles: List<Projectile> = emptyList(),
+    val fieldBounds: FieldBounds = FieldBounds()
 )
 
 data class Obstacle(
@@ -20,4 +21,11 @@ data class Obstacle(
 data class Projectile(
     val points: List<Offset>,
     val progress: Float = 0f
+)
+
+data class FieldBounds(
+    val minX: Float = -50f,
+    val maxX: Float = 50f,
+    val minY: Float = -30f,
+    val maxY: Float = 30f
 )

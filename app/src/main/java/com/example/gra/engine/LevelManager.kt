@@ -5,289 +5,290 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import com.example.gra.model.GameState
 import com.example.gra.model.Obstacle
+import com.example.gra.model.FieldBounds
 
 object LevelManager {
     fun loadLevel(level: Int): GameState {
         return when (level) {
             1 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(400f, 500f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(15f, 0f),
                 obstacles = emptyList(),
                 level = 1
             )
             2 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(500f, 400f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(20f, 5f),
                 obstacles = emptyList(),
                 level = 2
             )
             3 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(600f, 300f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(25f, -8f),
                 obstacles = emptyList(),
                 level = 3
             )
             4 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(500f, 500f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(20f, 0f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 400f), Size(50f, 200f)))
+                    Obstacle(Rect(Offset(10f, -5f), Size(2f, 10f)))
                 ),
                 level = 4
             )
             5 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(700f, 400f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(30f, 5f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(400f, 350f), Size(60f, 250f)))
+                    Obstacle(Rect(Offset(15f, -3f), Size(2f, 12f)))
                 ),
                 level = 5
             )
             6 -> createLevel(
-                playerPos = Offset(150f, 500f),
-                targetPos = Offset(650f, 300f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(25f, -10f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(350f, 300f), Size(70f, 300f))),
-                    Obstacle(Rect(Offset(500f, 400f), Size(50f, 200f)))
+                    Obstacle(Rect(Offset(12f, -8f), Size(2f, 12f))),
+                    Obstacle(Rect(Offset(18f, -6f), Size(2f, 10f)))
                 ),
                 level = 6
             )
             7 -> createLevel(
-                playerPos = Offset(100f, 600f),
-                targetPos = Offset(700f, 600f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(28f, 0f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 500f), Size(50f, 200f))),
-                    Obstacle(Rect(Offset(500f, 500f), Size(50f, 200f)))
+                    Obstacle(Rect(Offset(10f, -4f), Size(1.5f, 8f))),
+                    Obstacle(Rect(Offset(20f, -4f), Size(1.5f, 8f)))
                 ),
                 level = 7
             )
             8 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(800f, 350f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(35f, 8f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(400f, 250f), Size(80f, 400f)))
+                    Obstacle(Rect(Offset(18f, -5f), Size(3f, 18f)))
                 ),
                 level = 8
             )
             9 -> createLevel(
-                playerPos = Offset(100f, 600f),
-                targetPos = Offset(700f, 300f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(30f, -12f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(350f, 350f), Size(60f, 300f))),
-                    Obstacle(Rect(Offset(550f, 250f), Size(60f, 200f)))
+                    Obstacle(Rect(Offset(15f, -10f), Size(2f, 12f))),
+                    Obstacle(Rect(Offset(22f, -8f), Size(2f, 10f)))
                 ),
                 level = 9
             )
             10 -> createLevel(
-                playerPos = Offset(150f, 550f),
-                targetPos = Offset(750f, 550f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(32f, 0f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 450f), Size(50f, 200f))),
-                    Obstacle(Rect(Offset(450f, 450f), Size(50f, 200f))),
-                    Obstacle(Rect(Offset(600f, 450f), Size(50f, 200f)))
+                    Obstacle(Rect(Offset(10f, -4f), Size(1.5f, 8f))),
+                    Obstacle(Rect(Offset(18f, -4f), Size(1.5f, 8f))),
+                    Obstacle(Rect(Offset(26f, -4f), Size(1.5f, 8f)))
                 ),
                 level = 10
             )
             11 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(-300f, 400f), // Target to the left!
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(-20f, 5f),
                 obstacles = emptyList(),
                 level = 11
             )
             12 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(-400f, 350f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(-25f, -6f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(-200f, 350f), Size(60f, 250f)))
+                    Obstacle(Rect(Offset(-15f, -5f), Size(2f, 12f)))
                 ),
                 level = 12
             )
             13 -> createLevel(
-                playerPos = Offset(100f, 600f),
-                targetPos = Offset(650f, 200f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(28f, -15f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 200f), Size(100f, 500f)))
+                    Obstacle(Rect(Offset(15f, -20f), Size(4f, 25f)))
                 ),
                 level = 13
             )
             14 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(800f, 400f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(35f, 6f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 300f), Size(60f, 300f))),
-                    Obstacle(Rect(Offset(500f, 350f), Size(60f, 250f))),
-                    Obstacle(Rect(Offset(650f, 300f), Size(50f, 300f)))
+                    Obstacle(Rect(Offset(15f, -5f), Size(2f, 15f))),
+                    Obstacle(Rect(Offset(22f, -4f), Size(2f, 13f))),
+                    Obstacle(Rect(Offset(28f, -3f), Size(1.5f, 12f)))
                 ),
                 level = 14
             )
             15 -> createLevel(
-                playerPos = Offset(100f, 650f),
-                targetPos = Offset(700f, 650f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(30f, 0f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(250f, 550f), Size(50f, 200f))),
-                    Obstacle(Rect(Offset(400f, 550f), Size(50f, 200f))),
-                    Obstacle(Rect(Offset(550f, 550f), Size(50f, 200f)))
+                    Obstacle(Rect(Offset(10f, -4f), Size(1.5f, 8f))),
+                    Obstacle(Rect(Offset(17f, -4f), Size(1.5f, 8f))),
+                    Obstacle(Rect(Offset(24f, -4f), Size(1.5f, 8f)))
                 ),
                 level = 15
             )
             16 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(900f, 300f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(40f, -12f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(400f, 200f), Size(80f, 400f))),
-                    Obstacle(Rect(Offset(650f, 250f), Size(70f, 350f)))
+                    Obstacle(Rect(Offset(20f, -18f), Size(3f, 20f))),
+                    Obstacle(Rect(Offset(30f, -15f), Size(2.5f, 18f)))
                 ),
                 level = 16
             )
             17 -> createLevel(
-                playerPos = Offset(150f, 550f),
-                targetPos = Offset(-500f, 450f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(-30f, 8f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(-350f, 400f), Size(60f, 250f))),
-                    Obstacle(Rect(Offset(-150f, 450f), Size(50f, 200f)))
+                    Obstacle(Rect(Offset(-22f, 0f), Size(2f, 12f))),
+                    Obstacle(Rect(Offset(-12f, 2f), Size(1.5f, 10f)))
                 ),
                 level = 17
             )
             18 -> createLevel(
-                playerPos = Offset(100f, 600f),
-                targetPos = Offset(850f, 250f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(38f, -18f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 250f), Size(70f, 450f))),
-                    Obstacle(Rect(Offset(550f, 200f), Size(60f, 300f))),
-                    Obstacle(Rect(Offset(750f, 150f), Size(50f, 250f)))
+                    Obstacle(Rect(Offset(15f, -22f), Size(2.5f, 25f))),
+                    Obstacle(Rect(Offset(25f, -18f), Size(2f, 20f))),
+                    Obstacle(Rect(Offset(33f, -16f), Size(1.5f, 18f)))
                 ),
                 level = 18
             )
             19 -> createLevel(
-                playerPos = Offset(100f, 700f),
-                targetPos = Offset(700f, 300f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(32f, -14f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(250f, 400f), Size(80f, 400f))),
-                    Obstacle(Rect(Offset(450f, 250f), Size(70f, 300f))),
-                    Obstacle(Rect(Offset(600f, 200f), Size(60f, 250f)))
+                    Obstacle(Rect(Offset(12f, -12f), Size(3f, 18f))),
+                    Obstacle(Rect(Offset(20f, -16f), Size(2.5f, 20f))),
+                    Obstacle(Rect(Offset(27f, -14f), Size(2f, 18f)))
                 ),
                 level = 19
             )
             20 -> createLevel(
-                playerPos = Offset(100f, 600f),
-                targetPos = Offset(1000f, 400f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(45f, 5f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 300f), Size(60f, 400f))),
-                    Obstacle(Rect(Offset(500f, 350f), Size(70f, 350f))),
-                    Obstacle(Rect(Offset(700f, 300f), Size(60f, 300f))),
-                    Obstacle(Rect(Offset(850f, 350f), Size(50f, 250f)))
+                    Obstacle(Rect(Offset(15f, -8f), Size(2f, 18f))),
+                    Obstacle(Rect(Offset(23f, -6f), Size(2.5f, 16f))),
+                    Obstacle(Rect(Offset(31f, -5f), Size(2f, 15f))),
+                    Obstacle(Rect(Offset(38f, -4f), Size(1.5f, 13f)))
                 ),
                 level = 20
             )
             21 -> createLevel(
-                playerPos = Offset(100f, 500f),
-                targetPos = Offset(-600f, 350f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(-35f, -10f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(-450f, 300f), Size(70f, 300f))),
-                    Obstacle(Rect(Offset(-250f, 350f), Size(60f, 250f))),
-                    Obstacle(Rect(Offset(-50f, 400f), Size(50f, 200f)))
+                    Obstacle(Rect(Offset(-28f, -12f), Size(2.5f, 16f))),
+                    Obstacle(Rect(Offset(-18f, -10f), Size(2f, 14f))),
+                    Obstacle(Rect(Offset(-8f, -8f), Size(1.5f, 12f)))
                 ),
                 level = 21
             )
             22 -> createLevel(
-                playerPos = Offset(100f, 700f),
-                targetPos = Offset(900f, 200f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(40f, -20f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 200f), Size(80f, 600f))),
-                    Obstacle(Rect(Offset(550f, 150f), Size(70f, 400f))),
-                    Obstacle(Rect(Offset(750f, 100f), Size(60f, 350f)))
+                    Obstacle(Rect(Offset(15f, -28f), Size(3f, 30f))),
+                    Obstacle(Rect(Offset(25f, -24f), Size(2.5f, 26f))),
+                    Obstacle(Rect(Offset(34f, -22f), Size(2f, 24f)))
                 ),
                 level = 22
             )
             23 -> createLevel(
-                playerPos = Offset(100f, 600f),
-                targetPos = Offset(800f, 600f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(35f, 0f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(250f, 500f), Size(50f, 250f))),
-                    Obstacle(Rect(Offset(400f, 500f), Size(50f, 250f))),
-                    Obstacle(Rect(Offset(550f, 500f), Size(50f, 250f))),
-                    Obstacle(Rect(Offset(700f, 500f), Size(50f, 250f)))
+                    Obstacle(Rect(Offset(12f, -4f), Size(1.5f, 8f))),
+                    Obstacle(Rect(Offset(18f, -4f), Size(1.5f, 8f))),
+                    Obstacle(Rect(Offset(24f, -4f), Size(1.5f, 8f))),
+                    Obstacle(Rect(Offset(30f, -4f), Size(1.5f, 8f)))
                 ),
                 level = 23
             )
             24 -> createLevel(
-                playerPos = Offset(150f, 550f),
-                targetPos = Offset(-700f, 400f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(-40f, 8f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(-550f, 350f), Size(70f, 300f))),
-                    Obstacle(Rect(Offset(-350f, 300f), Size(60f, 350f))),
-                    Obstacle(Rect(Offset(-150f, 350f), Size(50f, 300f)))
+                    Obstacle(Rect(Offset(-32f, 0f), Size(2.5f, 14f))),
+                    Obstacle(Rect(Offset(-22f, -2f), Size(2f, 16f))),
+                    Obstacle(Rect(Offset(-12f, 0f), Size(1.5f, 14f)))
                 ),
                 level = 24
             )
             25 -> createLevel(
-                playerPos = Offset(100f, 700f),
-                targetPos = Offset(1100f, 300f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(48f, -14f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 250f), Size(80f, 550f))),
-                    Obstacle(Rect(Offset(550f, 200f), Size(70f, 400f))),
-                    Obstacle(Rect(Offset(750f, 250f), Size(60f, 350f))),
-                    Obstacle(Rect(Offset(950f, 200f), Size(50f, 300f)))
+                    Obstacle(Rect(Offset(15f, -20f), Size(3f, 26f))),
+                    Obstacle(Rect(Offset(25f, -18f), Size(2.5f, 24f))),
+                    Obstacle(Rect(Offset(34f, -16f), Size(2f, 22f))),
+                    Obstacle(Rect(Offset(42f, -14f), Size(1.5f, 20f)))
                 ),
                 level = 25
             )
             26 -> createLevel(
-                playerPos = Offset(100f, 800f),
-                targetPos = Offset(900f, 200f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(40f, -22f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 300f), Size(70f, 600f))),
-                    Obstacle(Rect(Offset(500f, 150f), Size(80f, 500f))),
-                    Obstacle(Rect(Offset(700f, 100f), Size(70f, 450f)))
+                    Obstacle(Rect(Offset(15f, -30f), Size(2.5f, 32f))),
+                    Obstacle(Rect(Offset(24f, -26f), Size(3f, 30f))),
+                    Obstacle(Rect(Offset(32f, -24f), Size(2.5f, 28f)))
                 ),
                 level = 26
             )
             27 -> createLevel(
-                playerPos = Offset(100f, 650f),
-                targetPos = Offset(-800f, 350f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(-45f, -12f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(-650f, 300f), Size(80f, 450f))),
-                    Obstacle(Rect(Offset(-450f, 250f), Size(70f, 400f))),
-                    Obstacle(Rect(Offset(-250f, 300f), Size(60f, 350f))),
-                    Obstacle(Rect(Offset(-50f, 350f), Size(50f, 300f)))
+                    Obstacle(Rect(Offset(-38f, -18f), Size(3f, 24f))),
+                    Obstacle(Rect(Offset(-28f, -16f), Size(2.5f, 22f))),
+                    Obstacle(Rect(Offset(-18f, -14f), Size(2f, 20f))),
+                    Obstacle(Rect(Offset(-8f, -12f), Size(1.5f, 18f)))
                 ),
                 level = 27
             )
             28 -> createLevel(
-                playerPos = Offset(100f, 750f),
-                targetPos = Offset(1200f, 250f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(52f, -18f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(300f, 200f), Size(90f, 650f))),
-                    Obstacle(Rect(Offset(550f, 150f), Size(80f, 500f))),
-                    Obstacle(Rect(Offset(800f, 200f), Size(70f, 450f))),
-                    Obstacle(Rect(Offset(1000f, 150f), Size(60f, 400f)))
+                    Obstacle(Rect(Offset(15f, -26f), Size(3.5f, 32f))),
+                    Obstacle(Rect(Offset(26f, -24f), Size(3f, 30f))),
+                    Obstacle(Rect(Offset(36f, -22f), Size(2.5f, 28f))),
+                    Obstacle(Rect(Offset(45f, -20f), Size(2f, 26f)))
                 ),
                 level = 28
             )
             29 -> createLevel(
-                playerPos = Offset(100f, 700f),
-                targetPos = Offset(1000f, 700f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(45f, 0f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(250f, 600f), Size(60f, 300f))),
-                    Obstacle(Rect(Offset(400f, 600f), Size(60f, 300f))),
-                    Obstacle(Rect(Offset(550f, 600f), Size(60f, 300f))),
-                    Obstacle(Rect(Offset(700f, 600f), Size(60f, 300f))),
-                    Obstacle(Rect(Offset(850f, 600f), Size(60f, 300f)))
+                    Obstacle(Rect(Offset(12f, -5f), Size(2f, 10f))),
+                    Obstacle(Rect(Offset(19f, -5f), Size(2f, 10f))),
+                    Obstacle(Rect(Offset(26f, -5f), Size(2f, 10f))),
+                    Obstacle(Rect(Offset(33f, -5f), Size(2f, 10f))),
+                    Obstacle(Rect(Offset(40f, -5f), Size(2f, 10f)))
                 ),
                 level = 29
             )
             30 -> createLevel(
-                playerPos = Offset(100f, 800f),
-                targetPos = Offset(-1000f, 200f),
+                playerPos = Offset(0f, 0f),
+                targetPos = Offset(-50f, -20f),
                 obstacles = listOf(
-                    Obstacle(Rect(Offset(-850f, 200f), Size(90f, 700f))),
-                    Obstacle(Rect(Offset(-650f, 150f), Size(80f, 600f))),
-                    Obstacle(Rect(Offset(-450f, 200f), Size(70f, 550f))),
-                    Obstacle(Rect(Offset(-250f, 150f), Size(60f, 500f))),
-                    Obstacle(Rect(Offset(-50f, 200f), Size(50f, 450f)))
+                    Obstacle(Rect(Offset(-44f, -32f), Size(3.5f, 36f))),
+                    Obstacle(Rect(Offset(-35f, -30f), Size(3f, 34f))),
+                    Obstacle(Rect(Offset(-26f, -28f), Size(2.5f, 32f))),
+                    Obstacle(Rect(Offset(-17f, -26f), Size(2f, 30f))),
+                    Obstacle(Rect(Offset(-8f, -24f), Size(1.5f, 28f)))
                 ),
                 level = 30
             )
-            else -> loadLevel(1) // Fallback to level 1
+            else -> loadLevel(1)
         }
     }
 
@@ -297,12 +298,26 @@ object LevelManager {
         obstacles: List<Obstacle>,
         level: Int
     ): GameState {
+        // Calculate field bounds based on level elements
+        val allX = listOf(playerPos.x, targetPos.x) +
+                   obstacles.flatMap { listOf(it.rect.left, it.rect.right) }
+        val allY = listOf(playerPos.y, targetPos.y) +
+                   obstacles.flatMap { listOf(it.rect.top, it.rect.bottom) }
+
+        val bounds = FieldBounds(
+            minX = (allX.minOrNull() ?: 0f) - 20f,
+            maxX = (allX.maxOrNull() ?: 0f) + 20f,
+            minY = (allY.minOrNull() ?: 0f) - 15f,
+            maxY = (allY.maxOrNull() ?: 0f) + 15f
+        )
+
         return GameState(
             playerPos = playerPos,
             targetPos = targetPos,
             obstacles = obstacles,
             currentLevel = level,
-            moveCharges = 3
+            moveCharges = 3,
+            fieldBounds = bounds
         )
     }
 }
