@@ -157,7 +157,6 @@ fun GameScreen(viewModel: GameViewModel) {
                                 fontSize = 18.sp,
                                 color = Color.White
                             )
-                            )
                         }
                         Switch(
                             checked = isMoveMode,
