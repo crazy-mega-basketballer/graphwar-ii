@@ -4,12 +4,12 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,13 +32,12 @@ import kotlin.math.PI
 @Composable
 fun GameScreen(viewModel: GameViewModel) {
     val state by viewModel.gameState.collectAsState()
-    val cameraOffset by viewModel.cameraOffset.collectAsState()
 
     var formulaText by remember { mutableStateOf(TextFieldValue("")) }
     var isMoveMode by remember { mutableStateOf(false) }
     var deltaX by remember { mutableStateOf("5") }
     var panOffset by remember { mutableStateOf(Offset.Zero) }
-    var zoomScale by remember { mutableStateOf(1f) }
+    var zoomScale by remember { mutableFloatStateOf(1f) }
 
     // Update camera offset in ViewModel
     LaunchedEffect(panOffset) {
@@ -147,7 +146,7 @@ fun GameScreen(viewModel: GameViewModel) {
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = if (isMoveMode) Icons.Default.Place else Icons.Default.Send,
+                                imageVector = if (isMoveMode) Icons.Default.Place else Icons.AutoMirrored.Filled.Send,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(24.dp)
@@ -236,7 +235,7 @@ fun GameScreen(viewModel: GameViewModel) {
                                 containerColor = Color(0xFF1565C0)
                             )
                         ) {
-                            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null)
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                             Spacer(Modifier.width(4.dp))
                             Text("FIRE", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
@@ -251,7 +250,7 @@ fun GameScreen(viewModel: GameViewModel) {
                         ) {
                             Text("FIRE", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.width(4.dp))
-                            Icon(imageVector = Icons.Default.ArrowForward, contentDescription = null)
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
                         }
                     }
                 } else {
@@ -513,17 +512,16 @@ fun GameCanvas(state: GameState, panOffset: Offset, zoomScale: Float) {
         val targetRadius = 1.5f * gridSize
         drawCircle(Color(0xFFFF1744), targetRadius, targetScreenPos)
         drawCircle(Color(0xFFB71C1C), targetRadius * 0.7f, targetScreenPos)
-        val crosshairSize = targetRadius
         drawLine(
             Color.White,
-            Offset(targetScreenPos.x - crosshairSize, targetScreenPos.y),
-            Offset(targetScreenPos.x + crosshairSize, targetScreenPos.y),
+            Offset(targetScreenPos.x - targetRadius, targetScreenPos.y),
+            Offset(targetScreenPos.x + targetRadius, targetScreenPos.y),
             strokeWidth = 3f
         )
         drawLine(
             Color.White,
-            Offset(targetScreenPos.x, targetScreenPos.y - crosshairSize),
-            Offset(targetScreenPos.x, targetScreenPos.y + crosshairSize),
+            Offset(targetScreenPos.x, targetScreenPos.y - targetRadius),
+            Offset(targetScreenPos.x, targetScreenPos.y + targetRadius),
             strokeWidth = 3f
         )
 
