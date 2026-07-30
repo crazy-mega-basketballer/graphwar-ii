@@ -11,7 +11,8 @@
       "Bash(git remote *)",
       "Bash(curl -s \"https://api.github.com/repos/crazy-mega-basketballer/graphwar-ii/actions/runs?per_page=1\")",
       "Bash(curl -s \"https://api.github.com/repos/crazy-mega-basketballer/graphwar-ii/actions/artifacts?per_page=5\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

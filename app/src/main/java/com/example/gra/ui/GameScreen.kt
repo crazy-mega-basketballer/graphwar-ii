@@ -109,7 +109,7 @@ fun GameScreen(viewModel: GameViewModel) {
                 containerColor = Color(0xFF00E5FF)
             ) {
                 Icon(
-                    Icons.Default.MyLocation,
+                    imageVector = Icons.Default.Home,
                     contentDescription = "Center on player",
                     tint = Color.Black
                 )
