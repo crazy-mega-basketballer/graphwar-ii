@@ -1,0 +1,30 @@
+# Task List: GraphWar Clone Implementation
+
+- [x] Project Setup
+    - [x] Initialize Android project structure
+    - [x] Configure `build.gradle.kts` with dependencies (Compose, Navigation, exp4j)
+    - [x] Setup `AndroidManifest.xml`
+- [x] Core Mathematical Engine
+    - [x] Implement `MathParser` using `exp4j`
+    - [x] Create `CoordinateConverter` (Implicitly in Drawing/Logic)
+    - [x] Implement projectile trajectory calculation
+- [/] Game State & Logic
+    - [x] Define `GameState` and `PlayerState` models
+    - [x] Implement `LevelManager` with 30-level definitions (Progressive placeholder)
+    - [x] Implement collision detection (Obstacles, Target)
+    - [x] Implement Movement mechanic (3 charges limit)
+- [x] UI Development (Jetpack Compose)
+    - [x] Theme & Styling (Modern, Dark/Light modes)
+    - [x] Game Canvas (Grid, Player, Target, Obstacles rendering)
+    - [x] Input HUD (Formula input, Shoot/Move toggle, Charges indicator)
+    - [ ] Level Selection Screen
+    - [ ] Main Menu
+- [ ] Animations & Polish
+    - [ ] Projectile flight animation
+    - [ ] Player movement animation
+    - [ ] Victory/Failure effects
+    - [ ] Basic sound effects setup
+- [ ] Verification
+    - [ ] Test all 30 levels
+    - [ ] Verify Math Parser robustness
+    - [ ] UI responsiveness checks

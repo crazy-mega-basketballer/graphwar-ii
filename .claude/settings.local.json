@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(html|js|css|json\\)$\")",
+      "Bash(./gradlew assembleDebug *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell($env:JAVA_HOME)",
+      "PowerShell($env:ANDROID_HOME)"
+    ]
+  }
+}
