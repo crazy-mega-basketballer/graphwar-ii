@@ -15,10 +15,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -39,9 +42,13 @@ fun GameScreen(viewModel: GameViewModel) {
     var panOffset by remember { mutableStateOf(Offset.Zero) }
     var zoomScale by remember { mutableFloatStateOf(1f) }
 
-    // Update camera offset in ViewModel
-    LaunchedEffect(panOffset) {
-        viewModel.updateCameraOffset(panOffset)
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
+
+    // Prevent system keyboard from appearing
+    DisposableEffect(Unit) {
+        focusManager.clearFocus()
+        onDispose { }
     }
 
     Row(modifier = Modifier.fillMaxSize().background(Color(0xFF0A0A0A))) {
@@ -171,7 +178,7 @@ fun GameScreen(viewModel: GameViewModel) {
                     }
                 }
 
-                // Formula Display
+                // Formula Display (Read-only, no system keyboard)
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     tonalElevation = 2.dp,
@@ -185,36 +192,23 @@ fun GameScreen(viewModel: GameViewModel) {
                             color = Color.Gray,
                             fontWeight = FontWeight.Bold
                         )
-                        BasicTextField(
-                            value = formulaText,
-                            onValueChange = { formulaText = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            textStyle = LocalTextStyle.current.copy(
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isMoveMode) Color(0xFF66BB6A) else Color(0xFFFFB300)
-                            ),
-                            decorationBox = { innerTextField ->
-                                if (formulaText.text.isEmpty()) {
-                                    Text(
-                                        "...",
-                                        fontSize = 20.sp,
-                                        color = Color.Gray
-                                    )
-                                }
-                                innerTextField()
-                            }
+                        Text(
+                            text = formulaText.text.ifEmpty { "..." },
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isMoveMode) Color(0xFF66BB6A) else Color(0xFFFFB300),
+                            modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
                 }
 
-                // Formula Keypad
-                FormulaKeypad(
-                    formula = formulaText,
-                    onFormulaChange = { formulaText = it }
-                )
+                // Formula Keypad (Scrollable if needed)
+                Box(modifier = Modifier.weight(1f)) {
+                    FormulaKeypad(
+                        formula = formulaText,
+                        onFormulaChange = { formulaText = it }
+                    )
+                }
 
                 Spacer(Modifier.height(4.dp))
 
@@ -232,6 +226,10 @@ fun GameScreen(viewModel: GameViewModel) {
                             modifier = Modifier.weight(1f).height(56.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF1565C0)
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 6.dp,
+                                pressedElevation = 2.dp
                             )
                         ) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -245,6 +243,10 @@ fun GameScreen(viewModel: GameViewModel) {
                             modifier = Modifier.weight(1f).height(56.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF1565C0)
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 6.dp,
+                                pressedElevation = 2.dp
                             )
                         ) {
                             Text("FIRE", fontSize = 16.sp, fontWeight = FontWeight.Bold)
@@ -258,16 +260,18 @@ fun GameScreen(viewModel: GameViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        TextField(
+                        OutlinedTextField(
                             value = deltaX,
                             onValueChange = { deltaX = it },
                             modifier = Modifier.weight(0.4f),
                             label = { Text("Δx", fontWeight = FontWeight.Bold) },
-                            colors = TextFieldDefaults.colors(
+                            colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = Color(0xFF2A2A2A),
                                 unfocusedContainerColor = Color(0xFF2A2A2A),
                                 focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFF66BB6A),
+                                unfocusedBorderColor = Color(0xFF424242)
                             ),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
@@ -279,6 +283,10 @@ fun GameScreen(viewModel: GameViewModel) {
                             modifier = Modifier.weight(0.6f).height(56.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF2E7D32)
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 6.dp,
+                                pressedElevation = 2.dp
                             )
                         ) {
                             Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(24.dp))
@@ -297,18 +305,21 @@ fun FormulaKeypad(formula: TextFieldValue, onFormulaChange: (TextFieldValue) -> 
     val buttons = listOf(
         listOf("7", "8", "9", "÷", "x"),
         listOf("4", "5", "6", "×", "^"),
-        listOf("1", "2", "3", "-", "√"),
-        listOf("0", ".", "(", ")", "+"),
-        listOf("sin", "cos", "abs", "π", "←"),
-        listOf("tan", "log", "◄", "►", "⌫"),
-        listOf("C", "", "", "", "")
+        listOf("1", "2", "3", "-", "("),
+        listOf("0", ".", "+", ")", "√"),
+        listOf("sin", "cos", "tan", "abs", "π"),
+        listOf("log", "ln", "e", "◄", "►"),
+        listOf("C", "", "", "", "⌫")
     )
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
         buttons.forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 row.forEach { symbol ->
                     if (symbol.isNotEmpty()) {
@@ -350,7 +361,7 @@ fun FormulaKeypad(formula: TextFieldValue, onFormulaChange: (TextFieldValue) -> 
                                                      currentText.substring(cursorPos)
                                         onFormulaChange(TextFieldValue(newText, TextRange(cursorPos + 5)))
                                     }
-                                    "sin", "cos", "tan", "log", "abs" -> {
+                                    "sin", "cos", "tan", "log", "abs", "ln" -> {
                                         val newText = currentText.substring(0, cursorPos) + symbol + "(" +
                                                      currentText.substring(cursorPos)
                                         onFormulaChange(TextFieldValue(newText, TextRange(cursorPos + symbol.length + 1)))
@@ -361,6 +372,12 @@ fun FormulaKeypad(formula: TextFieldValue, onFormulaChange: (TextFieldValue) -> 
                                                      currentText.substring(cursorPos)
                                         onFormulaChange(TextFieldValue(newText, TextRange(cursorPos + piValue.length)))
                                     }
+                                    "e" -> {
+                                        val eValue = Math.E.toString()
+                                        val newText = currentText.substring(0, cursorPos) + eValue +
+                                                     currentText.substring(cursorPos)
+                                        onFormulaChange(TextFieldValue(newText, TextRange(cursorPos + eValue.length)))
+                                    }
                                     else -> {
                                         val newText = currentText.substring(0, cursorPos) + symbol +
                                                      currentText.substring(cursorPos)
@@ -368,15 +385,15 @@ fun FormulaKeypad(formula: TextFieldValue, onFormulaChange: (TextFieldValue) -> 
                                     }
                                 }
                             },
-                            modifier = Modifier.weight(1f).height(44.dp),
+                            modifier = Modifier.weight(1f).height(48.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = when (symbol) {
                                     "C" -> Color(0xFFD32F2F)
                                     "⌫" -> Color(0xFFE64A19)
                                     "x" -> Color(0xFF00E5FF)
-                                    "π" -> Color(0xFF9C27B0)
+                                    "π", "e" -> Color(0xFF9C27B0)
                                     in listOf("÷", "×", "-", "+", "^") -> Color(0xFFFF9800)
-                                    in listOf("sin", "cos", "tan", "log", "abs", "√") -> Color(0xFF7B1FA2)
+                                    in listOf("sin", "cos", "tan", "log", "abs", "√", "ln") -> Color(0xFF7B1FA2)
                                     in listOf("◄", "►") -> Color(0xFF455A64)
                                     else -> Color(0xFF424242)
                                 }
@@ -389,7 +406,7 @@ fun FormulaKeypad(formula: TextFieldValue, onFormulaChange: (TextFieldValue) -> 
                         ) {
                             Text(
                                 symbol,
-                                fontSize = if (symbol.length > 2) 10.sp else 14.sp,
+                                fontSize = if (symbol.length > 2) 11.sp else 15.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -475,7 +492,7 @@ fun GameCanvas(state: GameState, panOffset: Offset, zoomScale: Float) {
             strokeWidth = 2f
         )
 
-        // Draw Obstacles
+        // Draw Obstacles with health indication
         state.obstacles.forEach { obstacle ->
             val topLeft = transformPoint(obstacle.rect.topLeft)
             val size = androidx.compose.ui.geometry.Size(
@@ -484,21 +501,23 @@ fun GameCanvas(state: GameState, panOffset: Offset, zoomScale: Float) {
             )
 
             if (obstacle.destroyed) {
+                // Destroyed - transparent
                 drawRect(
-                    Color(0xFF424242).copy(alpha = 0.3f),
+                    Color(0xFF424242).copy(alpha = 0.2f),
                     topLeft,
                     size
                 )
-                drawRect(
-                    Color(0xFF757575).copy(alpha = 0.5f),
-                    topLeft,
-                    size,
-                    style = Stroke(width = 2f)
-                )
             } else {
-                drawRect(Color(0xFF616161), topLeft, size)
+                // Color based on health
+                val healthColor = when {
+                    obstacle.healthPercent > 0.66f -> Color(0xFF616161) // Full health - dark gray
+                    obstacle.healthPercent > 0.33f -> Color(0xFF9E9E9E) // Medium - gray
+                    else -> Color(0xFFBDBDBD) // Low - light gray
+                }
+
+                drawRect(healthColor, topLeft, size)
                 drawRect(
-                    Color(0xFFBDBDBD),
+                    Color(0xFFFFFFFF).copy(alpha = obstacle.healthPercent * 0.5f),
                     topLeft,
                     size,
                     style = Stroke(width = 3f)

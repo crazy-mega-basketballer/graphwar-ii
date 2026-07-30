@@ -28,7 +28,7 @@ class GameViewModel : ViewModel() {
         val current = _gameState.value
         val points = mutableListOf<Offset>()
         var hitTarget = false
-        var destroyedObstacles = mutableListOf<Int>()
+        val damagedObstacles = mutableMapOf<Int, Int>() // index to damage amount
 
         // Calculate Y offset at x=0 to ensure trajectory starts from player
         val yOffsetAtZero = MathParser.eval(expression, 0.0) ?: 0.0
@@ -73,18 +73,17 @@ class GameViewModel : ViewModel() {
                     break
                 }
 
-                // Collision with Obstacles
+                // Collision with Obstacles - damage them progressively
                 current.obstacles.forEachIndexed { index, obstacle ->
                     if (obstacle.rect.contains(worldPoint) && !obstacle.destroyed) {
-                        if (index !in destroyedObstacles) {
-                            destroyedObstacles.add(index)
-                        }
+                        // Add damage to this obstacle
+                        damagedObstacles[index] = (damagedObstacles[index] ?: 0) + 1
                     }
                 }
 
-                // Stop if hit non-destroyed obstacle
+                // Stop if hit any non-destroyed obstacle
                 if (current.obstacles.any { it.rect.contains(worldPoint) && !it.destroyed }) {
-                    if (destroyedObstacles.isNotEmpty()) {
+                    if (damagedObstacles.isNotEmpty()) {
                         SoundManager.play(SoundManager.SoundEffect.EXPLOSION)
                     }
                     break
@@ -93,8 +92,14 @@ class GameViewModel : ViewModel() {
         }
 
         if (points.isNotEmpty()) {
+            // Apply damage to obstacles
             val updatedObstacles = current.obstacles.mapIndexed { index, obstacle ->
-                if (index in destroyedObstacles) obstacle.copy(destroyed = true) else obstacle
+                val damage = damagedObstacles[index] ?: 0
+                if (damage > 0) {
+                    obstacle.copy(currentHealth = (obstacle.currentHealth - damage).coerceAtLeast(0))
+                } else {
+                    obstacle
+                }
             }
 
             viewModelScope.launch {

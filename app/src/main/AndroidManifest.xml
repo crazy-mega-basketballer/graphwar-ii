@@ -4,13 +4,15 @@
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
-        android:label="Gra"
+        android:label="GraphWar II"
         android:supportsRtl="true"
         android:theme="@style/Theme.Gra">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize"
+            android:windowSoftInputMode="adjustNothing"
             android:theme="@style/Theme.Gra">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -15,8 +15,12 @@ data class GameState(
 
 data class Obstacle(
     val rect: androidx.compose.ui.geometry.Rect,
-    val destroyed: Boolean = false
-)
+    val maxHealth: Int = 3,
+    val currentHealth: Int = 3
+) {
+    val destroyed: Boolean get() = currentHealth <= 0
+    val healthPercent: Float get() = currentHealth.toFloat() / maxHealth.toFloat()
+}
 
 data class Projectile(
     val points: List<Offset>,
