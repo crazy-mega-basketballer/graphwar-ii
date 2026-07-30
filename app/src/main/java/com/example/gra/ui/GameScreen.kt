@@ -82,7 +82,7 @@ fun GameScreen(viewModel: GameViewModel) {
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            Icons.Default.Star,
+                            imageVector = Icons.Default.Star,
                             contentDescription = null,
                             tint = Color(0xFFFFC107),
                             modifier = Modifier.size(18.dp)
@@ -147,7 +147,7 @@ fun GameScreen(viewModel: GameViewModel) {
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                if (isMoveMode) Icons.Default.DirectionsWalk else Icons.Default.Rocket,
+                                imageVector = if (isMoveMode) Icons.Default.Place else Icons.Default.Send,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(24.dp)
@@ -157,6 +157,7 @@ fun GameScreen(viewModel: GameViewModel) {
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
                                 color = Color.White
+                            )
                             )
                         }
                         Switch(
@@ -235,7 +236,7 @@ fun GameScreen(viewModel: GameViewModel) {
                                 containerColor = Color(0xFF1565C0)
                             )
                         ) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = null)
+                            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null)
                             Spacer(Modifier.width(4.dp))
                             Text("FIRE", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
@@ -250,7 +251,7 @@ fun GameScreen(viewModel: GameViewModel) {
                         ) {
                             Text("FIRE", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.width(4.dp))
-                            Icon(Icons.Default.ArrowForward, contentDescription = null)
+                            Icon(imageVector = Icons.Default.ArrowForward, contentDescription = null)
                         }
                     }
                 } else {
@@ -282,7 +283,7 @@ fun GameScreen(viewModel: GameViewModel) {
                                 containerColor = Color(0xFF2E7D32)
                             )
                         ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(24.dp))
+                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(24.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("GO", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         }
