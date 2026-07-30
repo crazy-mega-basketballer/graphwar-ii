@@ -10,6 +10,7 @@ import com.example.gra.engine.LevelManager
 import com.example.gra.engine.MathParser
 import com.example.gra.model.GameState
 import com.example.gra.model.Projectile
+import com.example.gra.model.Explosion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,75 +29,92 @@ class GameViewModel : ViewModel() {
         val current = _gameState.value
         val points = mutableListOf<Offset>()
         var hitTarget = false
-        val damagedObstacles = mutableMapOf<Int, Int>() // index to damage amount
+        var hitObstacleIndex: Int? = null
+        var hitPoint: Offset? = null
+
+        // Validate expression first
+        if (expression.isBlank()) return
 
         // Calculate Y offset at x=0 to ensure trajectory starts from player
-        val yOffsetAtZero = MathParser.eval(expression, 0.0) ?: 0.0
+        val yOffsetAtZero = MathParser.eval(expression, 0.0) ?: return
 
-        // Calculate trajectory in both directions
-        val range = if (direction > 0) {
-            (0..100).map { it * 0.5 } // 0, 0.5, 1.0, 1.5, ... 50
-        } else {
-            (0..100).map { it * -0.5 } // 0, -0.5, -1.0, -1.5, ... -50
-        }
+        // Calculate trajectory with fine steps for accuracy
+        val maxSteps = 400 // Increased for better accuracy
+        val stepSize = 0.25 // Smaller steps = better accuracy
 
-        for (x in range) {
+        for (i in 0..maxSteps) {
+            val x = i * stepSize * direction
             val rawY = MathParser.eval(expression, x)
-            if (rawY != null) {
+
+            if (rawY != null && !rawY.isNaN() && !rawY.isInfinite()) {
                 // Apply Y correction so trajectory starts at player position
+                // Mathematical Y+ is UP, so we ADD correctedY
                 val correctedY = rawY - yOffsetAtZero
 
-                // World coordinates (relative to player)
+                // World coordinates (player-relative)
+                // In world coords: Y+ is mathematically UP
                 val worldPoint = Offset(
                     current.playerPos.x + x.toFloat(),
-                    current.playerPos.y - correctedY.toFloat()
+                    current.playerPos.y + correctedY.toFloat()
                 )
                 points.add(worldPoint)
 
-                // Check bounds
+                // Check bounds - stop at field boundaries
                 val bounds = current.fieldBounds
                 if (worldPoint.x < bounds.minX || worldPoint.x > bounds.maxX ||
                     worldPoint.y < bounds.minY || worldPoint.y > bounds.maxY) {
                     break
                 }
 
-                // Collision with Target (radius ~1 unit)
-                if ((worldPoint - current.targetPos).getDistance() < 1.5f) {
+                // Collision with Target (radius ~1.5 units)
+                val dx = worldPoint.x - current.targetPos.x
+                val dy = worldPoint.y - current.targetPos.y
+                val distanceToTarget = kotlin.math.sqrt(dx * dx + dy * dy)
+
+                if (distanceToTarget < 1.5f) {
                     hitTarget = true
-                    viewModelScope.launch {
-                        animateProjectile(points)
-                        SoundManager.play(SoundManager.SoundEffect.HIT)
-                        delay(300)
-                        SoundManager.play(SoundManager.SoundEffect.LEVEL_COMPLETE)
-                        nextLevel()
-                    }
                     break
                 }
 
-                // Collision with Obstacles - damage them progressively
-                current.obstacles.forEachIndexed { index, obstacle ->
-                    if (obstacle.rect.contains(worldPoint) && !obstacle.destroyed) {
-                        // Add damage to this obstacle
-                        damagedObstacles[index] = (damagedObstacles[index] ?: 0) + 1
+                // Collision with Obstacles
+                for ((index, obstacle) in current.obstacles.withIndex()) {
+                    if (obstacle.hasCollision(worldPoint)) {
+                        hitObstacleIndex = index
+                        hitPoint = worldPoint
+                        break
                     }
                 }
 
-                // Stop if hit any non-destroyed obstacle
-                if (current.obstacles.any { it.rect.contains(worldPoint) && !it.destroyed }) {
-                    if (damagedObstacles.isNotEmpty()) {
-                        SoundManager.play(SoundManager.SoundEffect.EXPLOSION)
-                    }
+                if (hitObstacleIndex != null) {
                     break
                 }
-            } else break
+            } else {
+                // If function becomes invalid, stop trajectory
+                break
+            }
         }
 
-        if (points.isNotEmpty()) {
-            // Apply damage to obstacles
+        // Handle hit target
+        if (hitTarget) {
+            viewModelScope.launch {
+                animateProjectile(points)
+                SoundManager.play(SoundManager.SoundEffect.HIT)
+                delay(400)
+                _gameState.value = current.copy(
+                    showVictoryDialog = true,
+                    projectiles = emptyList(),
+                    shotsFired = current.shotsFired + 1
+                )
+                SoundManager.play(SoundManager.SoundEffect.LEVEL_COMPLETE)
+            }
+            return
+        }
+
+        // Handle hit obstacle
+        if (hitObstacleIndex != null && hitPoint != null) {
             val updatedObstacles = current.obstacles.mapIndexed { index, obstacle ->
-                val damage = damagedObstacles[index] ?: 0
-                if (damage > 0) {
-                    obstacle.copy(currentHealth = (obstacle.currentHealth - damage).coerceAtLeast(0))
+                if (index == hitObstacleIndex) {
+                    obstacle.addHole(hitPoint)
                 } else {
                     obstacle
                 }
@@ -104,26 +122,51 @@ class GameViewModel : ViewModel() {
 
             viewModelScope.launch {
                 animateProjectile(points)
-                _gameState.value = current.copy(obstacles = updatedObstacles)
+                SoundManager.play(SoundManager.SoundEffect.EXPLOSION)
+
+                // Add explosion effect
+                val explosion = Explosion(position = hitPoint)
+                _gameState.value = current.copy(
+                    obstacles = updatedObstacles,
+                    explosions = current.explosions + explosion,
+                    shotsFired = current.shotsFired + 1
+                )
+
+                delay(300)
+                _gameState.value = _gameState.value.copy(projectiles = emptyList())
+
+                // Clean up expired explosions
+                cleanupExplosions()
+            }
+            return
+        }
+
+        // No hit - trajectory reaches bounds or ends naturally
+        if (points.isNotEmpty()) {
+            viewModelScope.launch {
+                animateProjectile(points)
+                delay(300)
+                _gameState.value = current.copy(
+                    projectiles = emptyList(),
+                    shotsFired = current.shotsFired + 1
+                )
             }
         }
     }
 
     private suspend fun animateProjectile(points: List<Offset>) {
-        val current = _gameState.value
-        val step = maxOf(1, points.size / 50) // Show ~50 frames max
+        val step = maxOf(1, points.size / 80) // Show ~80 frames for very smooth animation
         for (i in step..points.size step step) {
-            _gameState.value = current.copy(
+            _gameState.value = _gameState.value.copy(
                 projectiles = listOf(Projectile(points.take(i), i.toFloat() / points.size))
             )
-            delay(10)
+            delay(30) // Much slower animation - 30ms per frame
         }
         delay(300)
-        _gameState.value = current.copy(projectiles = emptyList())
     }
 
     fun loadLevel(level: Int) {
-        _gameState.value = LevelManager.loadLevel(level)
+        _gameState.value = LevelManager.loadLevel(level).copy(showVictoryDialog = false)
         centerOnPlayer()
     }
 
@@ -140,18 +183,23 @@ class GameViewModel : ViewModel() {
     fun onMove(expression: String, deltaX: Float) {
         val current = _gameState.value
         if (current.moveCharges > 0) {
+            // Validate expression
+            if (expression.isBlank()) return
+
             // Calculate Y offset at x=0
-            val yOffsetAtZero = MathParser.eval(expression, 0.0) ?: 0.0
+            val yOffsetAtZero = MathParser.eval(expression, 0.0) ?: return
 
             // Calculate Y at deltaX with correction
             val rawY = MathParser.eval(expression, deltaX.toDouble())
-            if (rawY != null) {
+            if (rawY != null && !rawY.isNaN() && !rawY.isInfinite()) {
                 val correctedY = rawY - yOffsetAtZero
 
                 SoundManager.play(SoundManager.SoundEffect.MOVE)
+
+                // World coordinates: Y+ is mathematically UP
                 val newPos = Offset(
                     current.playerPos.x + deltaX,
-                    current.playerPos.y - correctedY.toFloat()
+                    current.playerPos.y + correctedY.toFloat()
                 )
 
                 // Check if new position is within bounds
@@ -173,5 +221,19 @@ class GameViewModel : ViewModel() {
 
     fun centerOnPlayer() {
         _cameraOffset.value = Offset.Zero
+    }
+
+    private fun cleanupExplosions() {
+        viewModelScope.launch {
+            while (true) {
+                delay(100)
+                val current = _gameState.value
+                val activeExplosions = current.explosions.filter { it.isActive }
+                if (activeExplosions.size != current.explosions.size) {
+                    _gameState.value = current.copy(explosions = activeExplosions)
+                }
+                if (activeExplosions.isEmpty()) break
+            }
+        }
     }
 }

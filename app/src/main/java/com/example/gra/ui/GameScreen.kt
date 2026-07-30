@@ -2,10 +2,11 @@ package com.example.gra.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -15,25 +16,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gra.model.GameState
-import kotlin.math.PI
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GameScreen(viewModel: GameViewModel) {
+fun GameScreen(viewModel: GameViewModel, onNavigateBack: () -> Unit = {}) {
     val state by viewModel.gameState.collectAsState()
 
     var formulaText by remember { mutableStateOf(TextFieldValue("")) }
@@ -42,8 +42,23 @@ fun GameScreen(viewModel: GameViewModel) {
     var panOffset by remember { mutableStateOf(Offset.Zero) }
     var zoomScale by remember { mutableFloatStateOf(1f) }
 
+    var showDefeatDialog by remember { mutableStateOf(false) }
+
     val focusManager = LocalFocusManager.current
-    val focusRequester = remember { FocusRequester() }
+    val density = LocalDensity.current.density
+
+    // Check for defeat (no move charges and not at target)
+    LaunchedEffect(state.moveCharges, state.playerPos, state.targetPos) {
+        if (state.moveCharges == 0 && !state.showVictoryDialog) {
+            val distanceToTarget = kotlin.math.sqrt(
+                (state.playerPos.x - state.targetPos.x) * (state.playerPos.x - state.targetPos.x) +
+                (state.playerPos.y - state.targetPos.y) * (state.playerPos.y - state.targetPos.y)
+            )
+            if (distanceToTarget > 10f) { // Far from target
+                showDefeatDialog = true
+            }
+        }
+    }
 
     // Prevent system keyboard from appearing
     DisposableEffect(Unit) {
@@ -80,6 +95,13 @@ fun GameScreen(viewModel: GameViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back to menu",
+                            tint = Color.White
+                        )
+                    }
                     Text(
                         "Level ${state.currentLevel}",
                         fontSize = 18.sp,
@@ -97,6 +119,16 @@ fun GameScreen(viewModel: GameViewModel) {
                             " × ${state.moveCharges}",
                             fontSize = 16.sp,
                             color = Color.White
+                        )
+                    }
+                    IconButton(onClick = {
+                        viewModel.loadLevel(state.currentLevel)
+                        formulaText = TextFieldValue("")
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Restart level",
+                            tint = Color.White
                         )
                     }
                 }
@@ -178,7 +210,7 @@ fun GameScreen(viewModel: GameViewModel) {
                     }
                 }
 
-                // Formula Display (Read-only, no system keyboard)
+                // Formula Display with cursor
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     tonalElevation = 2.dp,
@@ -192,18 +224,86 @@ fun GameScreen(viewModel: GameViewModel) {
                             color = Color.Gray,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = formulaText.text.ifEmpty { "..." },
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isMoveMode) Color(0xFF66BB6A) else Color(0xFFFFB300),
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
+
+                        // Custom text display with cursor
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .pointerInput(formulaText.text) {
+                                    detectTapGestures { offset ->
+                                        // Measure text to find cursor position from tap
+                                        val text = formulaText.text
+                                        if (text.isNotEmpty()) {
+                                            val charWidth = 12f // Approximate character width in sp=20
+                                            val tapX = offset.x
+                                            val estimatedPos = (tapX / (charWidth * density)).toInt()
+                                                .coerceIn(0, text.length)
+
+                                            formulaText = formulaText.copy(selection = TextRange(estimatedPos))
+                                        }
+                                    }
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val displayText = formulaText.text.ifEmpty { "..." }
+                            val cursorPos = formulaText.selection.start.coerceIn(0, formulaText.text.length)
+
+                            if (formulaText.text.isEmpty()) {
+                                Text(
+                                    text = displayText,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Gray.copy(alpha = 0.5f)
+                                )
+                            } else {
+                                val beforeCursor = formulaText.text.substring(0, cursorPos)
+                                val afterCursor = formulaText.text.substring(cursorPos)
+
+                                Text(
+                                    text = beforeCursor,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isMoveMode) Color(0xFF66BB6A) else Color(0xFFFFB300)
+                                )
+
+                                // Blinking cursor
+                                var showCursor by remember { mutableStateOf(true) }
+                                LaunchedEffect(Unit) {
+                                    while (true) {
+                                        delay(500.milliseconds)
+                                        showCursor = !showCursor
+                                    }
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .width(2.dp)
+                                        .height(24.dp)
+                                        .background(
+                                            if (showCursor) Color.White else Color.Transparent
+                                        )
+                                )
+
+                                Text(
+                                    text = afterCursor,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isMoveMode) Color(0xFF66BB6A) else Color(0xFFFFB300)
+                                )
+                            }
+                        }
                     }
                 }
 
-                // Formula Keypad (Scrollable if needed)
-                Box(modifier = Modifier.weight(1f)) {
+                // Formula Keypad (Scrollable)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     FormulaKeypad(
                         formula = formulaText,
                         onFormulaChange = { formulaText = it }
@@ -225,16 +325,17 @@ fun GameScreen(viewModel: GameViewModel) {
                             },
                             modifier = Modifier.weight(1f).height(56.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF1565C0)
+                                containerColor = Color(0xFF1565C0),
+                                contentColor = Color.White
                             ),
                             elevation = ButtonDefaults.buttonElevation(
                                 defaultElevation = 6.dp,
                                 pressedElevation = 2.dp
                             )
                         ) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White)
                             Spacer(Modifier.width(4.dp))
-                            Text("FIRE", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text("FIRE", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                         Button(
                             onClick = {
@@ -242,16 +343,17 @@ fun GameScreen(viewModel: GameViewModel) {
                             },
                             modifier = Modifier.weight(1f).height(56.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF1565C0)
+                                containerColor = Color(0xFF1565C0),
+                                contentColor = Color.White
                             ),
                             elevation = ButtonDefaults.buttonElevation(
                                 defaultElevation = 6.dp,
                                 pressedElevation = 2.dp
                             )
                         ) {
-                            Text("FIRE", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text("FIRE", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             Spacer(Modifier.width(4.dp))
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Color.White)
                         }
                     }
                 } else {
@@ -273,8 +375,7 @@ fun GameScreen(viewModel: GameViewModel) {
                                 focusedBorderColor = Color(0xFF66BB6A),
                                 unfocusedBorderColor = Color(0xFF424242)
                             ),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                            singleLine = true
                         )
                         Button(
                             onClick = {
@@ -282,21 +383,112 @@ fun GameScreen(viewModel: GameViewModel) {
                             },
                             modifier = Modifier.weight(0.6f).height(56.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF2E7D32)
+                                containerColor = Color(0xFF2E7D32),
+                                contentColor = Color.White
                             ),
                             elevation = ButtonDefaults.buttonElevation(
                                 defaultElevation = 6.dp,
                                 pressedElevation = 2.dp
                             )
                         ) {
-                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(24.dp))
+                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White)
                             Spacer(Modifier.width(4.dp))
-                            Text("GO", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("GO", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
             }
         }
+    }
+
+    // Victory Dialog
+    if (state.showVictoryDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = {
+                Text(
+                    "Level Complete!",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF00E5FF)
+                )
+            },
+            text = {
+                Column {
+                    Text("Great work! You hit the target!", color = Color.White)
+                    Spacer(Modifier.height(8.dp))
+                    Text("Shots fired: ${state.shotsFired}", fontSize = 14.sp, color = Color.White)
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (state.currentLevel >= 30) {
+                            onNavigateBack()
+                        } else {
+                            viewModel.loadLevel(state.currentLevel + 1)
+                            formulaText = TextFieldValue("")
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00E5FF),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        if (state.currentLevel >= 30) "Back to Menu" else "Next Level",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onNavigateBack) {
+                    Text("Menu", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = Color(0xFF1E1E1E)
+        )
+    }
+
+    // Defeat Dialog
+    if (showDefeatDialog) {
+        AlertDialog(
+            onDismissRequest = { showDefeatDialog = false },
+            title = {
+                Text(
+                    "Out of Moves!",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFF5722)
+                )
+            },
+            text = {
+                Text(
+                    "You've run out of movement charges and are too far from the target.\n\nTry a different strategy!",
+                    color = Color.White
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDefeatDialog = false
+                        viewModel.loadLevel(state.currentLevel)
+                        formulaText = TextFieldValue("")
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF5722),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Retry", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onNavigateBack) {
+                    Text("Menu", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = Color(0xFF1E1E1E)
+        )
     }
 }
 
@@ -331,12 +523,25 @@ fun FormulaKeypad(formula: TextFieldValue, onFormulaChange: (TextFieldValue) -> 
                                 when (symbol) {
                                     "C" -> onFormulaChange(TextFieldValue(""))
                                     "⌫" -> if (cursorPos > 0) {
-                                        val newText = currentText.substring(0, cursorPos - 1) +
+                                        // Smart delete: remove entire function names
+                                        val mathFunctions = listOf("sin(", "cos(", "tan(", "log(", "ln(", "abs(", "sqrt(")
+                                        var charsToDelete = 1
+
+                                        // Check if cursor is right after a math function
+                                        for (func in mathFunctions) {
+                                            if (cursorPos >= func.length &&
+                                                currentText.substring(cursorPos - func.length, cursorPos) == func) {
+                                                charsToDelete = func.length
+                                                break
+                                            }
+                                        }
+
+                                        val newText = currentText.substring(0, cursorPos - charsToDelete) +
                                                      currentText.substring(cursorPos)
                                         onFormulaChange(
                                             TextFieldValue(
                                                 newText,
-                                                TextRange(cursorPos - 1)
+                                                TextRange(cursorPos - charsToDelete)
                                             )
                                         )
                                     }
@@ -367,16 +572,14 @@ fun FormulaKeypad(formula: TextFieldValue, onFormulaChange: (TextFieldValue) -> 
                                         onFormulaChange(TextFieldValue(newText, TextRange(cursorPos + symbol.length + 1)))
                                     }
                                     "π" -> {
-                                        val piValue = PI.toString()
-                                        val newText = currentText.substring(0, cursorPos) + piValue +
+                                        val newText = currentText.substring(0, cursorPos) + "π" +
                                                      currentText.substring(cursorPos)
-                                        onFormulaChange(TextFieldValue(newText, TextRange(cursorPos + piValue.length)))
+                                        onFormulaChange(TextFieldValue(newText, TextRange(cursorPos + 1)))
                                     }
                                     "e" -> {
-                                        val eValue = Math.E.toString()
-                                        val newText = currentText.substring(0, cursorPos) + eValue +
+                                        val newText = currentText.substring(0, cursorPos) + "e" +
                                                      currentText.substring(cursorPos)
-                                        onFormulaChange(TextFieldValue(newText, TextRange(cursorPos + eValue.length)))
+                                        onFormulaChange(TextFieldValue(newText, TextRange(cursorPos + 1)))
                                     }
                                     else -> {
                                         val newText = currentText.substring(0, cursorPos) + symbol +
@@ -407,7 +610,8 @@ fun FormulaKeypad(formula: TextFieldValue, onFormulaChange: (TextFieldValue) -> 
                             Text(
                                 symbol,
                                 fontSize = if (symbol.length > 2) 11.sp else 15.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
                         }
                     } else {
@@ -435,30 +639,49 @@ fun GameCanvas(state: GameState, panOffset: Offset, zoomScale: Float) {
             )
         }
 
-        // Calculate visible grid range
-        val startX = ((-centerOffset.x) / gridSize).toInt() - 2 + state.playerPos.x.toInt()
-        val endX = ((size.width - centerOffset.x) / gridSize).toInt() + 2 + state.playerPos.x.toInt()
-        val startY = ((-centerOffset.y) / gridSize).toInt() - 2 + state.playerPos.y.toInt()
-        val endY = ((size.height - centerOffset.y) / gridSize).toInt() + 2 + state.playerPos.y.toInt()
+        // Calculate visible grid range - IMPROVED ALGORITHM
+        // Transform screen corners to world coordinates to get exact range
+        val screenTopLeft = Offset(0f, 0f)
+        val screenBottomRight = Offset(size.width, size.height)
 
-        // Draw Grid
+        // Convert screen coordinates to world coordinates
+        val worldLeft = state.playerPos.x + (screenTopLeft.x - centerOffset.x) / gridSize
+        val worldRight = state.playerPos.x + (screenBottomRight.x - centerOffset.x) / gridSize
+        val worldTop = state.playerPos.y + (centerOffset.y - screenTopLeft.y) / gridSize
+        val worldBottom = state.playerPos.y + (centerOffset.y - screenBottomRight.y) / gridSize
+
+        // Add generous margin to prevent line disappearance
+        val startX = kotlin.math.floor(worldLeft).toInt() - 10
+        val endX = kotlin.math.ceil(worldRight).toInt() + 10
+        val startY = kotlin.math.floor(worldBottom).toInt() - 10
+        val endY = kotlin.math.ceil(worldTop).toInt() + 10
+
+        // Draw Grid - vertical lines (X-axis lines)
         for (x in startX..endX) {
             val screenX = centerOffset.x + (x - state.playerPos.x) * gridSize
-            drawLine(
-                if (x == 0) Color(0xFF424242) else Color(0xFF1A1A1A),
-                Offset(screenX, 0f),
-                Offset(screenX, size.height),
-                strokeWidth = if (x % 5 == 0) 2f else 1f
-            )
+            // Draw even if slightly outside screen to prevent gaps
+            if (screenX >= -gridSize && screenX <= size.width + gridSize) {
+                drawLine(
+                    color = if (x == 0) Color(0xFF757575) else Color(0xFF2A2A2A),
+                    start = Offset(screenX, 0f),
+                    end = Offset(screenX, size.height),
+                    strokeWidth = if (x % 5 == 0) 3f else 2f
+                )
+            }
         }
+
+        // Draw Grid - horizontal lines (Y-axis lines)
         for (y in startY..endY) {
             val screenY = centerOffset.y - (y - state.playerPos.y) * gridSize
-            drawLine(
-                if (y == 0) Color(0xFF424242) else Color(0xFF1A1A1A),
-                Offset(0f, screenY),
-                Offset(size.width, screenY),
-                strokeWidth = if (y % 5 == 0) 2f else 1f
-            )
+            // Draw even if slightly outside screen to prevent gaps
+            if (screenY >= -gridSize && screenY <= size.height + gridSize) {
+                drawLine(
+                    color = if (y == 0) Color(0xFF757575) else Color(0xFF2A2A2A),
+                    start = Offset(0f, screenY),
+                    end = Offset(size.width, screenY),
+                    strokeWidth = if (y % 5 == 0) 3f else 2f
+                )
+            }
         }
 
         // Draw field boundaries
@@ -492,36 +715,65 @@ fun GameCanvas(state: GameState, panOffset: Offset, zoomScale: Float) {
             strokeWidth = 2f
         )
 
-        // Draw Obstacles with health indication
+        // Draw Obstacles (circles) with holes
         state.obstacles.forEach { obstacle ->
-            val topLeft = transformPoint(obstacle.rect.topLeft)
-            val size = androidx.compose.ui.geometry.Size(
-                obstacle.rect.width * gridSize,
-                obstacle.rect.height * gridSize
-            )
+            val obstacleCenter = transformPoint(obstacle.center)
+            val obstacleRadius = obstacle.radius * gridSize
 
             if (obstacle.destroyed) {
-                // Destroyed - transparent
-                drawRect(
-                    Color(0xFF424242).copy(alpha = 0.2f),
-                    topLeft,
-                    size
+                // Destroyed - very transparent outline
+                drawCircle(
+                    Color(0xFF424242).copy(alpha = 0.15f),
+                    obstacleRadius,
+                    obstacleCenter,
+                    style = Stroke(width = 2f)
                 )
             } else {
+                // Calculate health percentage based on holes
+                val healthPercent = 1f - (obstacle.holes.size / 20f).coerceAtMost(1f)
+
                 // Color based on health
-                val healthColor = when {
-                    obstacle.healthPercent > 0.66f -> Color(0xFF616161) // Full health - dark gray
-                    obstacle.healthPercent > 0.33f -> Color(0xFF9E9E9E) // Medium - gray
+                val obstacleColor = when {
+                    healthPercent > 0.66f -> Color(0xFF616161) // Full health - dark gray
+                    healthPercent > 0.33f -> Color(0xFF9E9E9E) // Medium - gray
                     else -> Color(0xFFBDBDBD) // Low - light gray
                 }
 
-                drawRect(healthColor, topLeft, size)
-                drawRect(
-                    Color(0xFFFFFFFF).copy(alpha = obstacle.healthPercent * 0.5f),
-                    topLeft,
-                    size,
+                // Draw main obstacle circle
+                drawCircle(
+                    obstacleColor,
+                    obstacleRadius,
+                    obstacleCenter
+                )
+
+                // Draw outline
+                drawCircle(
+                    Color(0xFFFFFFFF).copy(alpha = healthPercent * 0.5f),
+                    obstacleRadius,
+                    obstacleCenter,
                     style = Stroke(width = 3f)
                 )
+
+                // Draw holes (cut-outs)
+                obstacle.holes.forEach { hole ->
+                    val holeCenter = transformPoint(hole.center)
+                    val holeRadius = hole.radius * gridSize
+
+                    // Draw hole as dark circle
+                    drawCircle(
+                        Color(0xFF0A0A0A), // Background color
+                        holeRadius,
+                        holeCenter
+                    )
+
+                    // Draw hole outline
+                    drawCircle(
+                        Color(0xFF757575).copy(alpha = 0.6f),
+                        holeRadius,
+                        holeCenter,
+                        style = Stroke(width = 1.5f)
+                    )
+                }
             }
         }
 
@@ -562,6 +814,37 @@ fun GameCanvas(state: GameState, panOffset: Offset, zoomScale: Float) {
                         strokeWidth = 3f
                     )
                 }
+            }
+        }
+
+        // Draw Explosions
+        state.explosions.forEach { explosion ->
+            if (explosion.isActive) {
+                val explosionPos = transformPoint(explosion.position)
+                val maxRadius = 2f * gridSize
+                val currentRadius = maxRadius * explosion.progress
+                val alpha = (1f - explosion.progress).coerceIn(0f, 1f)
+
+                // Outer ring - orange
+                drawCircle(
+                    Color(0xFFFF9800).copy(alpha = alpha * 0.6f),
+                    currentRadius,
+                    explosionPos
+                )
+
+                // Inner ring - yellow
+                drawCircle(
+                    Color(0xFFFFEB3B).copy(alpha = alpha * 0.8f),
+                    currentRadius * 0.7f,
+                    explosionPos
+                )
+
+                // Core - white
+                drawCircle(
+                    Color.White.copy(alpha = alpha),
+                    currentRadius * 0.3f,
+                    explosionPos
+                )
             }
         }
     }

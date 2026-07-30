@@ -48,7 +48,10 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = navController, startDestination = "menu") {
                         composable("menu") {
                             MainMenu(
-                                onStartGame = { navController.navigate("game") },
+                                onStartGame = {
+                                    gameViewModel.loadLevel(1)
+                                    navController.navigate("game")
+                                },
                                 onSelectLevel = { navController.navigate("levels") }
                             )
                         }
@@ -59,7 +62,12 @@ class MainActivity : ComponentActivity() {
                             })
                         }
                         composable("game") {
-                            GameScreen(gameViewModel)
+                            GameScreen(
+                                viewModel = gameViewModel,
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                }
+                            )
                         }
                     }
                 }
